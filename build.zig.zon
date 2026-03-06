@@ -1,0 +1,13 @@
+.{
+    .name = .ZigWebview,
+    .version = "0.0.1",
+    .minimum_zig_version = "0.15.2",
+    .dependencies = .{
+        .webview = .{
+            .url = "git+https://github.com/webview/webview#a4caad73f0ce3e311de8c90be3f0bbfdb1530d83",
+            .hash = "N-V-__8AAEnrCgA7eoIKxmS-Cso7uOUPYcdY1T8_eVQQ7KYG",
+        },
+    },
+    .paths = .{"src", "build.zig", "build.zig.zon", "LICENSE", "README.md"},
+    .fingerprint = 0xe552f9c59f258b8e,
+}
