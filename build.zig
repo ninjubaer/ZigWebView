@@ -5,7 +5,6 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const linkage = b.option(std.builtin.LinkMode, "linkage", "Linkage type (static or dynamic)") orelse .static;
-    std.debug.print("{any}\n", .{linkage});
 
     const webview = b.dependency("webview", .{});
     const webview_raw = b.addTranslateC(.{
