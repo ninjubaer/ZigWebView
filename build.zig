@@ -39,14 +39,14 @@ pub fn build(b: *std.Build) void {
                 .flags = &.{"-std=c++14"},
                 .language = .cpp,
             });
-            lib.addIncludePath(b.path("vendor/WebView2/"));
-            lib.addIncludePath(webview.path("compatibility/mingw/include"));
-            lib.linkSystemLibrary("ole32");
-            lib.linkSystemLibrary("shlwapi");
-            lib.linkSystemLibrary("version");
-            lib.linkSystemLibrary("advapi32");
-            lib.linkSystemLibrary("shell32");
-            lib.linkSystemLibrary("user32");
+            lib.root_module.addIncludePath(b.path("vendor/WebView2/"));
+            lib.root_module.addIncludePath(webview.path("compatibility/mingw/include"));
+            lib.root_module.linkSystemLibrary("ole32", .{});
+            lib.root_module.linkSystemLibrary("shlwapi", .{});
+            lib.root_module.linkSystemLibrary("version", .{});
+            lib.root_module.linkSystemLibrary("advapi32", .{});
+            lib.root_module.linkSystemLibrary("shell32", .{});
+            lib.root_module.linkSystemLibrary("user32", .{});
         },
         .macos => {
             lib.root_module.addCSourceFile(.{
@@ -54,7 +54,7 @@ pub fn build(b: *std.Build) void {
                 .flags = &.{"-std=c++11"},
                 .language = .cpp,
             });
-            lib.linkFramework("WebKit");
+            lib.root_module.linkFramework("WebKit", .{});
         },
         else => {
             lib.root_module.addCSourceFile(.{
@@ -62,8 +62,8 @@ pub fn build(b: *std.Build) void {
                 .flags = &.{"-std=c++11"},
                 .language = .cpp,
             });
-            lib.linkSystemLibrary("gtk+-3");
-            lib.linkSystemLibrary("webkit2gtk-4.1");
+            lib.root_module.linkSystemLibrary("gtk+-3", .{});
+            lib.root_module.linkSystemLibrary("webkit2gtk-4.1", .{});
         },
     }
     b.installArtifact(lib);
