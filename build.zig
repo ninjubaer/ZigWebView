@@ -4,11 +4,7 @@ const builtin = @import("builtin");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    if (b.args) |args| {
-        for (args, 1..) |arg, index| {
-            std.debug.print("arg[{d}] = {s}\n", .{ index, arg });
-        }
-    }
+    const linkage = b.option(std.builtin.LinkMode, "linkage", "Linkage type (static or dynamic)") orelse .static;
 
     const webview = b.dependency("webview", .{});
     const webview_raw = b.addTranslateC(.{
@@ -26,52 +22,17 @@ pub fn build(b: *std.Build) void {
         },
     });
 
-    const static_lib = build_library(b, webview, .{
+    const lib = b.addLibrary(.{
         .name = "webview",
-        .linkage = .static,
-        .target = target,
-        .optimize = optimize,
-    });
-    const shared_lib = build_library(b, webview, .{
-        .name = "webview",
-        .linkage = .dynamic,
-        .target = target,
-        .optimize = optimize,
-    });
-    _ = shared_lib;
-    const tests = b.addTest(.{
-        .name = "webview_test",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/tests.zig"),
+            .link_libcpp = true,
             .target = target,
             .optimize = optimize,
-            .imports = &.{
-                .{ .name = "webview", .module = webview_module },
-            },
         }),
     });
-    tests.root_module.linkLibrary(static_lib);
-    const run_tests = b.addRunArtifact(tests);
-    const test_step = b.step("test", "Run webview tests");
-    test_step.dependOn(&run_tests.step);
-}
-
-const build_options = struct {
-    name: []const u8,
-    linkage: std.builtin.LinkMode,
-    target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
-};
-
-fn build_library(b: *std.Build, webview: *std.Build.Dependency, options: build_options) *std.Build.Step.Compile {
-    const lib = b.addLibrary(.{ .name = options.name, .root_module = b.createModule(.{
-        .link_libcpp = true,
-        .target = options.target,
-        .optimize = options.optimize,
-    }) });
     lib.root_module.addIncludePath(webview.path("core/include"));
-    lib.root_module.addCMacro(if (options.linkage == .static) "WEBVIEW_STATIC" else "WEBVIEW_BUILD_SHARED", "");
-    switch (options.target.query.os_tag orelse builtin.os.tag) {
+    lib.root_module.addCMacro(if (linkage == .static) "WEBVIEW_STATIC" else "WEBVIEW_BUILD_SHARED", "");
+    switch (target.query.os_tag orelse builtin.os.tag) {
         .windows => {
             lib.root_module.addCSourceFile(.{
                 .file = webview.path("core/src/webview.cc"),
@@ -106,5 +67,21 @@ fn build_library(b: *std.Build, webview: *std.Build.Dependency, options: build_o
         },
     }
     b.installArtifact(lib);
-    return lib;
+
+    const tests = b.addTest(.{
+        .name = "webview_test",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/tests.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "webview", .module = webview_module },
+            },
+        }),
+    });
+    tests.root_module.linkLibrary(lib);
+    const run_tests = b.addRunArtifact(tests);
+    const test_step = b.step("test", "Run webview tests");
+    test_step.dependOn(&run_tests.step);
 }
+
